@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>梅花易数排盘-V1.0</title>
+<!-- 【核心修改】这里设置了浏览器标签页的“梅花图标”，无需外部图片，直接用代码生成 -->
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><path d=%22M50 35 C50 15 70 15 70 35 C70 45 60 50 50 50 C40 50 30 45 30 35 C30 15 50 15 50 35 Z%22 fill=%22%23cb3a56%22 transform=%22rotate(0 50 50)%22/><path d=%22M50 35 C50 15 70 15 70 35 C70 45 60 50 50 50 C40 50 30 45 30 35 C30 15 50 15 50 35 Z%22 fill=%22%23cb3a56%22 transform=%22rotate(72 50 50)%22/><path d=%22M50 35 C50 15 70 15 70 35 C70 45 60 50 50 50 C40 50 30 45 30 35 C30 15 50 15 50 35 Z%22 fill=%22%23cb3a56%22 transform=%22rotate(144 50 50)%22/><path d=%22M50 35 C50 15 70 15 70 35 C70 45 60 50 50 50 C40 50 30 45 30 35 C30 15 50 15 50 35 Z%22 fill=%22%23cb3a56%22 transform=%22rotate(216 50 50)%22/><path d=%22M50 35 C50 15 70 15 70 35 C70 45 60 50 50 50 C40 50 30 45 30 35 C30 15 50 15 50 35 Z%22 fill=%22%23cb3a56%22 transform=%22rotate(288 50 50)%22/><circle cx=%2250%22 cy=%2250%22 r=%2212%22 fill=%22%23f9e8d0%22/></svg>">
+
+<style>
+    /* =========================================
+       1. 基础样式
+       ========================================= */
+    :root {
+        --bg-home: #f9e8d0; 
+        --bg-res: #f0eae5;  
+        --c-accent: #ca6924;     
+        --c-red: #d32f2f;        
+        --gua-width: 88px;       
+        --line-height: 13px;     
+        --line-gap: 6px;   
+        
+        /* 历史页配色 */
+        --his-bg: #f2ecde;      
+        --his-card: #fffbf0;    
+        --his-title: #b35c44;   
+        --his-tag: #065279;     
+        --his-del: #e63f32;     
+    }
+
+    * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; user-select: none; }
+    
+    body { margin: 0; padding: 0; background-color: var(--bg-home); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif; min-height: 100vh; }
+
+    /* =========================================
+       2. 容器与布局
+       ========================================= */
+    #main-interface { height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; }
+    
+    .header-info { text-align: center; margin-bottom: 15px; transform: translateY(-5px); }
+    .date-greg { font-size: 1.8rem; font-weight: 700; margin-bottom: 8px; color: #2b2b2b; }
+    .date-lunar { font-size: 1.1rem; color: #625955; font-weight: 600; }
+    
+    .clock-container { display: flex; align-items: flex-end; justify-content: center; margin-bottom: 30px; margin-left: 30px; line-height: 1; transform: translateY(-5px); }
+    .time-digits { font-size: 7rem; font-weight: 700; line-height: 0.8; letter-spacing: -4px; color: #2b2b2b; }
+  /* === 手机端强制修复补丁 START === */
+    @media screen and (max-width: 650px) {
+        .time-digits { 
+            font-size: 4.5rem !important; /* 强制缩小字体 */
+            letter-spacing: -2px; 
+        }
+        .clock-container { 
+            margin-left: 0 !important; /* 修正偏移 */
+            margin-bottom: 20px;
+            transform: none !important;
+            flex-wrap: nowrap; /* 防止换行 */
+        }
+        .shichen-box {
+            margin-left: 10px; /* 拉近时辰文字距离 */
+        }
+        .control-panel {
+            width: 90% !important; /* 按钮区域防溢出 */
+        }
+    }
+           @media screen and (max-width: 650px) {
+    .date-txt { font-size: 1rem !important; }
+    .page-title { font-size: 0.9rem !important; margin-bottom: 3px !important; }
+
+    .info-row-common {
+        font-size: 0.75rem !important;
+        line-height: 1.05 !important;
+        display: block !important;
+        text-align: center !important;
+        margin-bottom: 4px !important;
+    }
+
+    .bold-txt, #res-xunkong, #res-shensha, #res-year, #res-month, #res-day, #res-hour {
+        display: inline !important;
+        white-space: normal !important;
+    }
+
+    #res-shensha {
+        color: #333;
+        font-size: 0.8rem !important;
+    }
+}
+    /* === 手机端强制修复补丁 END === */
+    .time-colon { position: relative; top: -10px; margin: 0 2px; }
+    .shichen-box { display: flex; flex-direction: column; justify-content: flex-end; margin-left: 15px; gap: 2px; }
+    .shichen-char { font-size: 1.0rem; font-weight: 600; line-height: 1.1; color: #625955; }
+    
+    .control-panel { width: 72%; max-width: 350px; }
+    .btn-hero { width: 100%; padding: 24px; background-color: #2578b5; color: #fff; border: none; border-radius: 16px; font-size: 1.35rem; font-weight: 700; margin-bottom: 20px; box-shadow: 0 6px 20px rgba(37, 120, 181, 0.2); }
+    .grid-4 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .btn-sub { border: none; border-radius: 16px; height: 95px; color: #fff; font-size: 1.2rem; font-weight: 700; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.08); }
+    .bg-top-left { background-color: #cb3a56; } .bg-top-right { background-color: #248067; } 
+    .bg-bot-left { background-color: #8552a1; } .bg-bot-right { background-color: #ca6924; } 
+    .btn-hero:active, .btn-sub:active { transform: scale(0.96); opacity: 0.9; transition: transform 0.05s; }
+
+    /* =========================================
+       3. 结果页
+       ========================================= */
+    #result-interface { display: none; width: 100%; max-width: 450px; min-height: 100vh; background-color: var(--bg-res); flex-direction: column; margin: 0 auto; }
+    .res-header { padding: 10px 20px 5px 25px; border-bottom: 1px solid rgba(0,0,0,0.05); text-align: center; }
+    .page-title { font-size: 1.3rem; font-weight: 700; color: var(--c-accent); margin-bottom: 5px; letter-spacing: 2px; }
+    
+    .info-row-1 { display: flex; justify-content: center; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .date-txt { font-size: 1.4rem; font-weight: 700; color: #222; letter-spacing: 0.5px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    .gender-tag { font-size: 1rem; color: #2578b5; font-weight: 800; cursor: pointer; padding: 5px; }
+
+    .info-row-common { font-size: 0.95rem; color: #444; font-weight: 400; margin-bottom: 5px; line-height: 1.5; }
+    .bold-txt { font-weight: 650; color: #000; }
+
+    .gua-container { flex: 1; display: flex; flex-direction: column; justify-content: space-evenly; align-items: center; width: 100%; padding: 10px 0; }
+    .gua-row-top { display: flex; justify-content: space-evenly; align-items: flex-end; width: 100%; margin-bottom: 10px; }
+    .gua-row-bot { display: flex; justify-content: center; gap: 60px; width: 100%; }
+    .gua-box { display: flex; flex-direction: column; align-items: center; width: var(--gua-width); position: relative; z-index: 1; }
+    .gua-name { font-size: 1.2rem; font-weight: 800; margin-bottom: 8px; letter-spacing: 1px; white-space: nowrap; }
+    .gua-type { font-size: 1rem; color: #555; margin-top: 6px; font-weight: 700; }
+    
+    .gua-lines { display: flex; flex-direction: column-reverse; gap: var(--line-gap); width: 100%; }
+    .line { height: var(--line-height); width: 100%; border-radius: 3px; position: relative; }
+    .line:nth-child(4) { margin-bottom: 6px; }
+
+    .yang { background-color: #222; }
+    .yin { background: transparent; display: flex; justify-content: space-between; width: 100%; }
+    .yin::before, .yin::after { content: ''; display: block; width: 42%; height: 100%; background-color: #222; border-radius: 3px; }
+    .move.yang { background-color: var(--c-red); }
+    .move.yin::before, .move.yin::after { background-color: var(--c-red); }
+
+    .tag-ti { position: absolute; left: -22px; top: 50%; transform: translateY(-50%); font-size: 16px; font-weight: 800; color: #333; pointer-events: none; }
+    .tag-yong { position: absolute; left: -22px; top: 50%; transform: translateY(-50%); font-size: 16px; font-weight: 800; color: var(--c-red); pointer-events: none; }
+    .tag-circle, .tag-cross { position: absolute; right: -20px; top: 50%; transform: translateY(-50%); font-size: 16px; font-weight: bold; color: var(--c-red); pointer-events: none; }
+
+    .note-container { padding: 15px 20px 30px 20px; background-color: var(--bg-res); border-top: 1px solid rgba(0,0,0,0.08); flex-shrink: 0; }
+    .input-group { margin-bottom: 12px; }
+    
+    .simple-input { 
+        width: 100%; padding: 12px; 
+        border: 1px solid #aaa; border-radius: 8px; 
+        background: rgba(255,255,255,0.6); 
+        font-size: 1rem; outline: none; color: #333; 
+    }
+    .simple-input::placeholder { color: #888; font-size: 0.95rem; }
+
+    .footer-btns { display: flex; gap: 15px; margin-top: 15px; }
+    .btn-foot { flex: 1; padding: 14px; border: none; border-radius: 10px; font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: transform 0.1s; }
+    .btn-foot:active { transform: scale(0.96); opacity: 0.9; }
+    .btn-close { background: #e0e0e0; color: #555; }
+    .btn-save { background: var(--c-accent); color: #fff; }
+    
+    /* === 五行配色 (中国色) - 强制生效 === */
+    .c-jin  { color: #ffa60f !important; } /* 金叶黄 */
+    .c-mu   { color: #21a675 !important; } /* 松柏绿 */
+    .c-shui { color: #126bae !important; } /* 柏林蓝 */
+    .c-huo  { color: #f34718 !important; } /* 榴花红 */
+    .c-tu   { color: #845a33 !important; } /* 赭石 */
+
+    /* =========================================
+       4. 弹窗与输入框
+       ========================================= */
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 999; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+    .modal-box { background-color: #fffaf4; width: 90%; max-width: 340px; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+    .modal-title { font-size: 1.3rem; font-weight: 700; margin-bottom: 20px; color: #ca6924; text-align: center; }
+    .input-row { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
+    .input-wrapper { flex: 1; }
+    
+    .smart-input { 
+        width: 100%; padding: 10px; 
+        font-size: 1.2rem; font-weight: 700; 
+        border: 1px solid #aaa; border-radius: 10px; 
+        background: #fff; text-align: center; color: #333; 
+        outline: none; -webkit-appearance: none; 
+    }
+    .smart-input::placeholder { color: #ccc; font-weight: 500; }
+
+    .modal-actions { display: flex; gap: 15px; margin-top: 25px; }
+    .btn-modal { flex: 1; padding: 0; border: none; border-radius: 10px; font-size: 1.1rem; font-weight: 700; cursor: pointer; height: 50px; line-height: 50px; }
+    .btn-cancel { background-color: #e0e0e0; color: #555; }
+    .btn-confirm { background-color: #ca6924; color: #fff; }
+    
+    .manual-gua-container { display: flex; flex-direction: column; gap: 14px; padding: 10px 20px; background: #fffaf4; }
+    .m-yao { height: 32px; width: 60%; margin: 0 auto; background-color: #333; border-radius: 4px; cursor: pointer; transition: all 0.1s; }
+    .m-yao.yin { background-color: transparent; display: flex; justify-content: space-between; }
+    .m-yao.yin::before, .m-yao.yin::after { content: ''; display: block; width: 42%; height: 100%; background-color: #333; border-radius: 4px; }
+    .m-yao.moving { background-color: #d32f2f; }
+    .m-yao.yin.moving { background-color: transparent; }
+    .m-yao.yin.moving::before, .m-yao.yin.moving::after { background-color: #d32f2f; }
+
+    /* =========================================
+       5. 历史记录 (本次改造重点：侧边贴边式)
+       ========================================= */
+    .fab-history {
+        position: fixed;
+        top: 60%;                   /* 高度位置 */
+        right: 0;                   /* 紧贴右边 */
+        z-index: 1000;
+        
+        background-color: var(--c-accent);
+        color: white;
+        
+        /* 形状：左侧圆角，右侧直角 */
+        border-radius: 8px 0 0 8px;
+        box-shadow: -2px 2px 8px rgba(202,105,36,0.3);
+        
+        /* 布局：竖排文字 */
+        writing-mode: vertical-rl;
+        padding: 10px 4px 10px 6px; 
+        
+        /* 字体 */
+        font-size: 0.95rem;
+        font-weight: bold;
+        letter-spacing: 4px;
+        
+        cursor: pointer;
+        transition: transform 0.1s;
+    }
+    
+    /* 点击效果 */
+    .fab-history:active {
+        transform: scale(0.95);
+        background-color: #b35c32;
+    }
+
+    #history-page {
+        display: none;
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background-color: var(--his-bg);
+        z-index: 2000;
+        flex-direction: column;
+    }
+
+    .nav-bar {
+        height: 60px; display: flex; align-items: center; justify-content: space-between;
+        padding: 0 20px; background-color: var(--his-bg);
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+        flex-shrink: 0;
+    }
+    .nav-icon { font-size: 1.5rem; color: #555; cursor: pointer; width: 40px; }
+    .nav-title { font-size: 1.2rem; font-weight: 700; color: var(--his-title); letter-spacing: 2px; }
+    .nav-action { font-size: 1rem; color: var(--his-tag); font-weight: bold; cursor: pointer; width: 40px; text-align: right; }
+    
+    .history-list { flex: 1; overflow-y: auto; padding: 15px; }
+    
+    .history-item {
+        background: var(--his-card); border-radius: 8px; padding: 16px;
+        margin-bottom: 12px; 
+        box-shadow: 0 2px 8px rgba(132, 90, 51, 0.08);
+        display: flex; align-items: center; gap: 12px;
+        transition: all 0.2s; cursor: pointer;
+        border: 1px solid rgba(0,0,0,0.02);
+    }
+    .history-item:active { background-color: #fdfdfd; transform: scale(0.99); }
+    
+    .check-box {
+        width: 22px; height: 22px; border: 2px solid #ccc; border-radius: 50%;
+        display: none; flex-shrink: 0;
+        align-items: center; justify-content: center;
+    }
+    .check-box.checked { background-color: var(--his-tag); border-color: var(--his-tag); }
+    .check-box.checked::after { content: '✓'; color: #fff; font-size: 14px; font-weight: bold; }
+
+    .item-content { flex: 1; }
+    .item-title { font-size: 1.05rem; font-weight: 700; color: var(--his-tag); margin-bottom: 6px; }
+    .item-desc { font-size: 0.95rem; color: #5d4e45; line-height: 1.5; }
+
+    .bottom-bar {
+        height: 70px; background: var(--his-bg); border-top: 1px solid rgba(0,0,0,0.05);
+        display: none; align-items: center; justify-content: space-between;
+        padding: 0 25px;
+    }
+    .btn-bar {
+        padding: 10px 24px; border-radius: 20px; font-weight: bold; font-size: 0.95rem; border: none;
+    }
+    .btn-cancel-del { background: #e0e0e0; color: #555; } 
+    .btn-delete { background: var(--his-del); color: #fff; }
+    
+    .backup-area {
+        padding: 20px; display: flex; gap: 15px; justify-content: center;
+        border-top: 1px solid rgba(0,0,0,0.05); background: var(--his-bg);
+    }
+    .btn-io {
+        padding: 10px 20px; border-radius: 8px; border: 1px solid #d0c0b0;
+        background: #fff; color: #666; font-size: 0.9rem; font-weight: bold;
+    }
+
+    /* === Toast 提示框 === */
+    .toast {
+        position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+        background: rgba(0,0,0,0.75); color: #fff;
+        padding: 12px 24px; border-radius: 30px;
+        font-size: 1rem; font-weight: bold;
+        display: none; z-index: 3000;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+</style>
+</head>
+<body>
+
+    <div id="main-interface">
+        <div class="header-info">
+            <div class="date-greg" id="g-date"></div>
+            <div class="date-lunar" id="l-date"></div>
+        </div>
+        <div class="clock-container">
+            <div class="time-digits">
+                <span id="hour">--</span><span class="time-colon">:</span><span id="minute">--</span>
+            </div>
+            <div class="shichen-box" id="shichen-box-el"></div>
+        </div>
+        <div class="control-panel">
+            <button class="btn-hero" onclick="openNumModal(true)">时间+报数</button>
+            <div class="grid-4">
+                <button class="btn-sub bg-top-left" onclick="openNumModal(false)">报数起卦</button>
+                <button class="btn-sub bg-top-right" onclick="calcTimeGua()">时间起卦</button>
+                <button class="btn-sub bg-bot-left" onclick="calcRandomGua()">随机起卦</button>
+                <button class="btn-sub bg-bot-right" onclick="openManualModal()">手动选卦</button>
+            </div>
+        </div>
+        <!-- 侧边历史按钮：改为方形贴边、竖排文字 -->
+        <div class="fab-history" onclick="openHistoryPage()">历史</div>
+    </div>
+
+    <div id="result-interface">
+        <div class="res-header">
+            <div class="page-title">排盘结果</div>
+            <div class="info-row-1">
+                <div class="date-txt" id="res-date-txt">--/--/--</div>
+                <div class="gender-tag" id="gender-btn" onclick="toggleGender()">[男]</div>
+            </div>
+            <div class="info-row-common">
+                <span id="res-year">--</span> · <span class="bold-txt" id="res-month">--</span> · <span class="bold-txt" id="res-day">--</span> · <span id="res-hour">--</span> &nbsp; <span class="bold-txt">旬空:</span> <span id="res-xunkong">--</span>
+            </div>
+            <div class="info-row-common">
+                <span class="bold-txt">神煞:</span> <span id="res-shensha">--</span>
+            </div>
+        </div>
+
+        <div class="gua-container">
+            <div class="gua-row-top">
+                <div class="gua-box"><div class="gua-name" id="res-name-ben">--</div><div class="gua-lines" id="res-lines-ben"></div><div class="gua-type">本卦</div></div>
+                <div class="gua-box"><div class="gua-name" id="res-name-hu">--</div><div class="gua-lines" id="res-lines-hu"></div><div class="gua-type">互卦</div></div>
+                <div class="gua-box"><div class="gua-name" id="res-name-bian">--</div><div class="gua-lines" id="res-lines-bian"></div><div class="gua-type">变卦</div></div>
+            </div>
+            <div class="gua-row-bot">
+                <div class="gua-box"><div class="gua-name" id="res-name-cuo">--</div><div class="gua-lines" id="res-lines-cuo"></div><div class="gua-type">错卦</div></div>
+                <div class="gua-box"><div class="gua-name" id="res-name-zong">--</div><div class="gua-lines" id="res-lines-zong"></div><div class="gua-type">综卦</div></div>
+            </div>
+        </div>
+
+        <div class="note-container">
+            <div class="input-group"><input type="text" class="simple-input" id="input-matter" placeholder="所测事项：" autocomplete="off"></div>
+            <div class="input-group"><input type="text" class="simple-input" id="input-note" placeholder="断语/反馈：" autocomplete="off"></div>
+            <div class="input-group"><input type="text" class="simple-input" id="input-tag" placeholder="添加标签：" autocomplete="off"></div>
+            <div class="footer-btns">
+                <button class="btn-foot btn-close" onclick="closeResultPage()">返回</button>
+                <button class="btn-foot btn-save" onclick="saveCurrentRecord()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="history-page">
+        <div class="nav-bar">
+            <!-- 退出历史回到主页 -->
+            <div class="nav-icon" onclick="exitHistoryToMain()">←</div>
+            <div class="nav-title">历史档案</div>
+            <div class="nav-action" id="btn-select-mode" onclick="toggleSelectMode()">选择</div>
+        </div>
+        
+        <div class="history-list" id="history-list"></div>
+
+        <div class="backup-area" id="backup-area">
+            <button class="btn-io" onclick="exportData()">导出备份</button>
+            <button class="btn-io" onclick="document.getElementById('file-input').click()">导入恢复</button>
+            <input type="file" id="file-input" style="display:none" onchange="importData(this)">
+        </div>
+
+        <div class="bottom-bar" id="delete-bar">
+            <button class="btn-bar btn-cancel-del" onclick="toggleSelectMode()">取消</button>
+            <button class="btn-bar btn-delete" onclick="deleteSelected()">删除</button>
+        </div>
+    </div>
+
+    <div id="toast-msg" class="toast"></div>
+
+    <div class="modal-overlay" id="modal-manual"><div class="modal-box"><div class="modal-title">点击选择卦象</div><div class="manual-gua-container"><div id="my-6" class="m-yao" onclick="toggleYao(6)"></div><div id="my-5" class="m-yao" onclick="toggleYao(5)"></div><div id="my-4" class="m-yao" onclick="toggleYao(4)"></div><div id="my-3" class="m-yao" onclick="toggleYao(3)"></div><div id="my-2" class="m-yao" onclick="toggleYao(2)"></div><div id="my-1" class="m-yao" onclick="toggleYao(1)"></div></div><div class="modal-actions"><button class="btn-modal btn-cancel" onclick="closeManualModal()">取消</button><button class="btn-modal btn-confirm" onclick="confirmManual()">排盘</button></div></div></div>
+    <div class="modal-overlay" id="modal-num"><div class="modal-box"><div class="modal-title" id="num-title">报数设定</div><div class="input-row"><div class="input-wrapper"><input type="tel" maxlength="3" class="smart-input" id="num-1" placeholder="请输入数字 (0-100)"></div></div><div class="input-row" id="row-num-2"><div class="input-wrapper"><input type="tel" maxlength="3" class="smart-input" id="num-2" placeholder="数字二 (0-100)"></div></div><div class="input-row" id="row-num-3"><div class="input-wrapper"><input type="tel" maxlength="3" class="smart-input" id="num-3" placeholder="数字三 (可选填)"></div></div><div class="modal-actions"><button class="btn-modal btn-cancel" onclick="closeNumModal()">取消</button><button class="btn-modal btn-confirm" onclick="confirmNum()">确定</button></div></div></div>
+    <div class="modal-overlay" id="modal-random"><div class="modal-box"><div class="modal-title">随机起卦</div><div class="manual-gua-container"><div id="rnd-6" class="m-yao"></div><div id="rnd-5" class="m-yao"></div><div id="rnd-4" class="m-yao"></div><div id="rnd-3" class="m-yao"></div><div id="rnd-2" class="m-yao"></div><div id="rnd-1" class="m-yao"></div></div><div class="modal-actions"><button class="btn-modal btn-cancel" id="btn-random-left" onclick="handleRandomLeftBtn()">取消</button><button class="btn-modal btn-confirm" id="btn-random-action" onclick="handleRandomAction()">开始</button></div></div></div>
+
+<script>
+    // === 全局变量 ===
+    let curUp = 0, curDown = 0, curMove = 0;
+    let isFromHistory = false;
+    let editingIndex = -1;
+
+    const TG = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
+    const DZ = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+
+    function getGanZhi(date) {
+        let d = new Date(date.getTime());
+        const rawH = d.getHours();
+        if (rawH >= 23) { d.setDate(d.getDate() + 1); }
+        const Y = d.getFullYear(); const M = d.getMonth() + 1; const D = d.getDate();
+        let cY = Y; if(M < 2 || (M === 2 && D < 4)) { cY = Y - 1; }
+        let yOffset = cY - 1984;
+        let yGan = (yOffset % 10 + 10) % 10; let yZhi = (yOffset % 12 + 12) % 12;
+        const terms = [5,4,6,5,6,6,7,8,8,8,7,7];
+        let mIdx = M - 2; if (D < terms[M-1]) mIdx -= 1; if (mIdx < 0) mIdx += 12;
+        let mGan = ((yGan % 5) * 2 + 2 + mIdx) % 10; let mZhi = (mIdx + 2) % 12;
+        const base2000 = Date.UTC(2000, 0, 1);
+        const curr = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
+        let days = Math.floor((curr - base2000)/86400000);
+        let dIdx = (54 + days) % 60; if(dIdx < 0) dIdx += 60;
+        let dGan = dIdx % 10; let dZhi = dIdx % 12;
+        let hZhiIdx = Math.floor((rawH + 1) / 2) % 12;
+        let hGan = ((dGan % 5) * 2 + hZhiIdx) % 10;
+        return { Y: TG[yGan]+DZ[yZhi], M: TG[mGan]+DZ[mZhi], D: TG[dGan]+DZ[dZhi], H: TG[hGan]+DZ[hZhiIdx] };
+    }
+
+    function refresh() {
+        const now = new Date(); 
+        const h = now.getHours(); const m = now.getMinutes();
+        document.getElementById('hour').innerText = h.toString().padStart(2,'0');
+        document.getElementById('minute').innerText = m.toString().padStart(2,'0');
+        document.getElementById('g-date').innerText = `${now.getFullYear()} / ${now.getMonth()+1} / ${now.getDate()}`;
+        const gz = getGanZhi(now);
+        document.getElementById('l-date').innerText = `${gz.Y}年 · ${gz.M}月 · ${gz.D}日`;
+        const box = document.getElementById('shichen-box-el'); box.innerHTML = '';
+        const shichenStr = gz.H + "时";
+        for(let c of shichenStr) { let d = document.createElement('div'); d.className='shichen-char'; d.innerText=c; box.appendChild(d); }
+    }
+    setInterval(refresh, 1000); refresh();
+
+    const GUA_DATA = { 1: {name:"乾",lines:[1,1,1]},2:{name:"兑",lines:[1,1,0]},3:{name:"离",lines:[1,0,1]},4:{name:"震",lines:[1,0,0]},5:{name:"巽",lines:[0,1,1]},6:{name:"坎",lines:[0,1,0]},7:{name:"艮",lines:[0,0,1]},8:{name:"坤",lines:[0,0,0]},0:{name:"坤",lines:[0,0,0]} };
+    function getGuaName(up, down) {
+        if(up===0) up=8; if(down===0) down=8;
+        const names = {
+            "1-1":"乾为天", "1-2":"天泽履", "1-3":"天火同人", "1-4":"天雷无妄", "1-5":"天风姤", "1-6":"天水讼", "1-7":"天山遁", "1-8":"天地否",
+            "2-1":"泽天夬", "2-2":"兑为泽", "2-3":"泽火革", "2-4":"泽雷随", "2-5":"泽风大过", "2-6":"泽水困", "2-7":"泽山咸", "2-8":"泽地萃",
+            "3-1":"火天大有", "3-2":"火泽睽", "3-3":"离为火", "3-4":"火雷噬嗑", "3-5":"火风鼎", "3-6":"火水未济", "3-7":"火山旅", "3-8":"火地晋",
+            "4-1":"雷天大壮", "4-2":"雷泽归妹", "4-3":"雷火丰", "4-4":"震为雷", "4-5":"雷风恒", "4-6":"雷水解", "4-7":"雷山小过", "4-8":"雷地豫",
+            "5-1":"风天小畜", "5-2":"风泽中孚", "5-3":"风火家人", "5-4":"风雷益", "5-5":"巽为风", "5-6":"风水涣", "5-7":"风山渐", "5-8":"风地观",
+            "6-1":"水天需", "6-2":"水泽节", "6-3":"水火既济", "6-4":"水雷屯", "6-5":"水风井", "6-6":"坎为水", "6-7":"水山蹇", "6-8":"水地比",
+            "7-1":"山天大畜", "7-2":"山泽损", "7-3":"山火贲", "7-4":"山雷颐", "7-5":"山风蛊", "7-6":"山水蒙", "7-7":"艮为山", "7-8":"山地剥",
+            "8-1":"地天泰", "8-2":"地泽临", "8-3":"地火明夷", "8-4":"地雷复", "8-5":"地风升", "8-6":"地水师", "8-7":"地山谦", "8-8":"坤为地"
+        };
+        return names[`${up}-${down}`] || "未知";
+    }
+
+    const GUA_COLOR_MAP = {
+        "1-1":"c-jin", "1-5":"c-jin", "1-7":"c-jin", "1-8":"c-jin", "5-8":"c-jin", "7-8":"c-jin", "3-8":"c-jin", "3-1":"c-jin",
+        "2-2":"c-jin", "2-6":"c-jin", "2-8":"c-jin", "2-7":"c-jin", "6-7":"c-jin", "8-7":"c-jin", "4-7":"c-jin", "4-2":"c-jin",
+        "3-3":"c-huo", "3-7":"c-huo", "3-5":"c-huo", "3-6":"c-huo", "7-6":"c-huo", "5-6":"c-huo", "1-6":"c-huo", "1-3":"c-huo",
+        "4-4":"c-mu", "4-8":"c-mu", "4-6":"c-mu", "4-5":"c-mu", "8-5":"c-mu", "6-5":"c-mu", "2-5":"c-mu", "2-4":"c-mu",
+        "5-5":"c-mu", "5-1":"c-mu", "5-3":"c-mu", "5-4":"c-mu", "1-4":"c-mu", "3-4":"c-mu", "7-4":"c-mu", "7-5":"c-mu",
+        "6-6":"c-shui", "6-2":"c-shui", "6-4":"c-shui", "6-3":"c-shui", "2-3":"c-shui", "4-3":"c-shui", "8-3":"c-shui", "8-6":"c-shui",
+        "7-7":"c-tu", "7-3":"c-tu", "7-1":"c-tu", "7-2":"c-tu", "3-2":"c-tu", "1-2":"c-tu", "5-2":"c-tu", "5-7":"c-tu",
+        "8-8":"c-tu", "8-4":"c-tu", "8-2":"c-tu", "8-1":"c-tu", "4-1":"c-tu", "2-1":"c-tu", "6-1":"c-tu", "6-8":"c-tu"
+    };
+
+    function getGuaColorClass(up, down) {
+        if(up===0) up=8; if(down===0) down=8;
+        return GUA_COLOR_MAP[`${up}-${down}`] || "c-tu";
+    }
+
+    function renderNewGua(containerId, up, down, movingLine, isBian) {
+        if(up===0) up=8; if(down===0) down=8;
+        const container = document.getElementById(containerId); container.innerHTML = ''; 
+        const upLines = GUA_DATA[up].lines; const downLines = GUA_DATA[down].lines;
+        const allLines = [...downLines, ...upLines]; 
+        for(let i=0; i<6; i++) {
+            const lineVal = allLines[i]; const lineNum = i + 1;
+            const div = document.createElement('div'); div.className = 'line';
+            if(lineVal === 1) div.classList.add('yang'); else div.classList.add('yin');
+            
+            if(!isBian && lineNum === movingLine) {
+                div.classList.add('move');
+                const tag = document.createElement('span');
+                if (lineVal === 1) { tag.className = 'tag-circle'; tag.innerText = '○'; }
+                else { tag.className = 'tag-cross'; tag.innerText = '✕'; }
+                div.appendChild(tag);
+            }
+            if(!isBian) {
+                let isUpperYong = (movingLine >= 4);
+                let tagType = null;
+                if (i === 4) tagType = isUpperYong ? 'yong' : 'ti';
+                if (i === 1) tagType = isUpperYong ? 'ti' : 'yong';
+                if (tagType) {
+                    const label = document.createElement('span');
+                    label.className = (tagType === 'ti') ? 'tag-ti' : 'tag-yong';
+                    label.innerText = (tagType === 'ti') ? '体' : '用';
+                    div.appendChild(label);
+                }
+            }
+            container.appendChild(div);
+        }
+    }
+
+    function linesToNum(arr) { for(let k=1; k<=8; k++) { const target = GUA_DATA[k].lines; if(target[0]===arr[0] && target[1]===arr[1] && target[2]===arr[2]) return k; } return 8; }
+    function calcHu(up, down) { if(up===0) up=8; if(down===0) down=8; const upArr = GUA_DATA[up].lines; const downArr = GUA_DATA[down].lines; const all = [...downArr, ...upArr]; const huDownLines = [all[1], all[2], all[3]]; const huUpLines = [all[2], all[3], all[4]]; return { up: linesToNum(huUpLines), down: linesToNum(huDownLines) }; }
+    function calcBian(up, down, move) { if(up===0) up=8; if(down===0) down=8; if(move === 0) return { up: up, down: down }; const upArr = [...GUA_DATA[up].lines]; const downArr = [...GUA_DATA[down].lines]; if(move <= 3) { downArr[move-1] = downArr[move-1] === 1 ? 0 : 1; } else { upArr[move-4] = upArr[move-4] === 1 ? 0 : 1; } return { up: linesToNum(upArr), down: linesToNum(downArr) }; }
+    function calcCuo(up, down) { if(up===0) up=8; if(down===0) down=8; const upArr = GUA_DATA[up].lines; const downArr = GUA_DATA[down].lines; const all = [...downArr, ...upArr]; const newLines = all.map(x => x === 1 ? 0 : 1); return { down: linesToNum(newLines.slice(0,3)), up: linesToNum(newLines.slice(3,6)) }; }
+    function calcZong(up, down) { if(up===0) up=8; if(down===0) down=8; const upArr = GUA_DATA[up].lines; const downArr = GUA_DATA[down].lines; const all = [...downArr, ...upArr].reverse(); return { down: linesToNum(all.slice(0,3)), up: linesToNum(all.slice(3,6)) }; }
+
+    function getXunKong(gan, zhi) {
+        let ganIdx = TG.indexOf(gan); let zhiIdx = DZ.indexOf(zhi);
+        let diff = (zhiIdx - ganIdx + 12) % 12;
+        const xkMap = { 0: "戌亥", 10: "申酉", 8: "午未", 6: "辰巳", 4: "寅卯", 2: "子丑" };
+        return xkMap[diff] || "未知";
+    }
+
+    function getShenSha(dayGan, dayZhi) {
+        let ma = ""; if("申子辰".includes(dayZhi)) ma = "寅"; else if("寅午戌".includes(dayZhi)) ma = "申"; else if("亥卯未".includes(dayZhi)) ma = "巳"; else if("巳酉丑".includes(dayZhi)) ma = "亥";
+        let tao = ""; if("申子辰".includes(dayZhi)) tao = "酉"; else if("寅午戌".includes(dayZhi)) tao = "卯"; else if("亥卯未".includes(dayZhi)) tao = "子"; else if("巳酉丑".includes(dayZhi)) tao = "午";
+        const luMap = {"甲":"寅", "乙":"卯", "丙":"巳", "戊":"巳", "丁":"午", "己":"午", "庚":"申", "辛":"酉", "壬":"亥", "癸":"子"}; let lu = luMap[dayGan] || "";
+        let gui = ""; if("甲戊庚".includes(dayGan)) gui = "丑未"; else if("乙己".includes(dayGan)) gui = "子申"; else if("丙丁".includes(dayGan)) gui = "亥酉"; else if("壬癸".includes(dayGan)) gui = "巳卯"; else if("辛".includes(dayGan)) gui = "午寅";
+        return `驿马-${ma} &nbsp; 桃花-${tao} &nbsp; 干禄-${lu} &nbsp; 贵人-${gui}`;
+    }
+
+    let isMale = true;
+    function toggleGender() {
+        isMale = !isMale;
+        const el = document.getElementById('gender-btn');
+        if(isMale) { el.innerText = '[男]'; el.style.color = '#2578b5'; } 
+        else { el.innerText = '[女]'; el.style.color = '#d32f2f'; }
+    }
+
+    function showGuaPanel(up, down, move) {
+        curUp = up; curDown = down; curMove = move;
+
+        if(up===0) up=8; if(down===0) down=8; 
+        
+        renderNewGua('res-lines-ben', up, down, move, false);
+        const elBen = document.getElementById('res-name-ben');
+        elBen.innerText = getGuaName(up, down);
+        elBen.className = 'gua-name ' + getGuaColorClass(up, down);
+
+        const hu = calcHu(up, down);
+        renderNewGua('res-lines-hu', hu.up, hu.down, -1, true);
+        const elHu = document.getElementById('res-name-hu');
+        elHu.innerText = getGuaName(hu.up, hu.down);
+        elHu.className = 'gua-name ' + getGuaColorClass(hu.up, hu.down);
+
+        const bian = calcBian(up, down, move);
+        renderNewGua('res-lines-bian', bian.up, bian.down, -1, true);
+        const elBian = document.getElementById('res-name-bian');
+        elBian.innerText = getGuaName(bian.up, bian.down);
+        elBian.className = 'gua-name ' + getGuaColorClass(bian.up, bian.down);
+
+        const cuo = calcCuo(up, down);
+        renderNewGua('res-lines-cuo', cuo.up, cuo.down, -1, true);
+        const elCuo = document.getElementById('res-name-cuo');
+        elCuo.innerText = getGuaName(cuo.up, cuo.down);
+        elCuo.className = 'gua-name ' + getGuaColorClass(cuo.up, cuo.down);
+
+        const zong = calcZong(up, down);
+        renderNewGua('res-lines-zong', zong.up, zong.down, -1, true);
+        const elZong = document.getElementById('res-name-zong');
+        elZong.innerText = getGuaName(zong.up, zong.down);
+        elZong.className = 'gua-name ' + getGuaColorClass(zong.up, zong.down);
+
+        const now = new Date();
+        const YY = now.getFullYear();
+        const MM = (now.getMonth()+1).toString().padStart(2, '0');
+        const DD = now.getDate().toString().padStart(2, '0');
+        const HH = now.getHours().toString().padStart(2, '0');
+        const MI = now.getMinutes().toString().padStart(2, '0');
+        
+        document.getElementById('res-date-txt').innerText = `${YY}/${MM}/${DD} ${HH}:${MI}`;
+        
+        const gz = getGanZhi(now);
+        document.getElementById('res-year').innerText = gz.Y + '年';
+        document.getElementById('res-month').innerText = gz.M + '月';
+        document.getElementById('res-day').innerText = gz.D + '日';
+        document.getElementById('res-hour').innerText = gz.H + '时';
+
+        let dayGan = gz.D[0]; let dayZhi = gz.D[1];
+        document.getElementById('res-xunkong').innerText = getXunKong(dayGan, dayZhi);
+        document.getElementById('res-shensha').innerHTML = getShenSha(dayGan, dayZhi);
+
+        document.getElementById('main-interface').style.display = 'none';
+        document.getElementById('result-interface').style.display = 'flex';
+        document.body.style.backgroundColor = '#f0eae5'; 
+        
+        clearInputs();
+    }
+
+    function closeResultPage() { 
+        document.getElementById('result-interface').style.display = 'none'; 
+        if (isFromHistory) {
+            openHistoryPage(); // 回历史
+        } else {
+            document.getElementById('main-interface').style.display = 'flex'; // 回主页
+        }
+        document.body.style.backgroundColor = '#f9e8d0'; 
+    }
+    
+    function closeHistoryPage() {
+        document.getElementById('history-page').style.display = 'none';
+    }
+
+    function exitHistoryToMain() {
+        closeHistoryPage();
+        document.getElementById('main-interface').style.display = 'flex';
+        document.body.style.backgroundColor = '#f9e8d0';
+    }
+    
+    function calcTimeGua() { 
+        isFromHistory = false; editingIndex = -1; 
+        const now = new Date(); const h = now.getHours(); const m = now.getMinutes(); const up = h % 8; const down = m % 8; let move = (h + m) % 6; if(move === 0) move = 6; showGuaPanel(up, down, move); 
+    }
+
+    let randomTimer = null; let randomState = 0; let currentRandomYao = [];
+    function calcRandomGua() { isFromHistory = false; editingIndex = -1; resetRandomUI(); document.getElementById('modal-random').style.display = 'flex'; }
+    function closeRandomModal() { clearInterval(randomTimer); document.getElementById('modal-random').style.display = 'none'; }
+    function handleRandomLeftBtn() { if (randomState === 2) resetRandomUI(); else closeRandomModal(); }
+    function handleRandomAction() { const rightBtn = document.getElementById('btn-random-action'); const leftBtn = document.getElementById('btn-random-left'); if (randomState === 0) { randomTimer = setInterval(flashRandomYao, 100); rightBtn.innerText = "结束"; randomState = 1; } else if (randomState === 1) { clearInterval(randomTimer); rightBtn.innerText = "确认"; leftBtn.innerText = "重置"; randomState = 2; } else { processRandomResult(); } }
+    function resetRandomUI() { randomState = 0; clearInterval(randomTimer); document.getElementById('btn-random-action').innerText = "开始"; document.getElementById('btn-random-left').innerText = "取消"; for(let i=1; i<=6; i++) renderSingleYao('rnd-'+i, 0); }
+    function flashRandomYao() { currentRandomYao = [null]; for(let i=1; i<=6; i++) currentRandomYao[i] = Math.floor(Math.random() * 2); const movingPos = Math.floor(Math.random() * 6) + 1; if (currentRandomYao[movingPos] === 0) currentRandomYao[movingPos] = 2; else currentRandomYao[movingPos] = 3; for(let i=1; i<=6; i++) renderSingleYao('rnd-'+i, currentRandomYao[i]); }
+    function renderSingleYao(id, s) { const el = document.getElementById(id); if(!el) return; el.className = 'm-yao'; if(s === 1) el.classList.add('yin'); if(s === 2) el.classList.add('moving'); if(s === 3) { el.classList.add('yin'); el.classList.add('moving'); } }
+    function processRandomResult() { const downLines = [(currentRandomYao[1]===0||currentRandomYao[1]===2)?1:0, (currentRandomYao[2]===0||currentRandomYao[2]===2)?1:0, (currentRandomYao[3]===0||currentRandomYao[3]===2)?1:0]; const upLines = [(currentRandomYao[4]===0||currentRandomYao[4]===2)?1:0, (currentRandomYao[5]===0||currentRandomYao[5]===2)?1:0, (currentRandomYao[6]===0||currentRandomYao[6]===2)?1:0]; const down = findGuaNum(downLines); const up = findGuaNum(upLines); let move = 0; for(let i=1; i<=6; i++) { if(currentRandomYao[i] === 2 || currentRandomYao[i] === 3) move = i; } closeRandomModal(); showGuaPanel(up, down, move); }
+    function findGuaNum(lines) { for(let k=1; k<=8; k++) { const target = GUA_DATA[k].lines; if(target[0]===lines[0] && target[1]===lines[1] && target[2]===lines[2]) return k; } return 8; }
+    function confirmNum() { 
+        isFromHistory = false; editingIndex = -1;
+        const n1 = parseInt(document.getElementById('num-1').value); const n2Val = document.getElementById('num-2').value; const n3Val = document.getElementById('num-3').value; if(isNaN(n1)) { alert("请至少输入数字一"); return; } if (document.getElementById('row-num-2').style.display === 'none') { const now = new Date(); const h = now.getHours(); const m = now.getMinutes(); const up = h % 8; const down = m % 8; let move = (h + m + n1) % 6; if(move === 0) move = 6; closeNumModal(); showGuaPanel(up, down, move); } else { const n2 = parseInt(n2Val); if(isNaN(n2)) { alert("请输入数字二"); return; } if (n3Val.trim() === "") { let move = (n1+n2)%6; if(move === 0) move = 6; closeNumModal(); showGuaPanel(n1%8, n2%8, move); } else { const n3 = parseInt(n3Val); if(isNaN(n3)) { alert("数字三格式错误"); return; } let move = (n1+n2+n3)%6; if(move === 0) move = 6; closeNumModal(); showGuaPanel(n1%8, n2%8, move); } } 
+    }
+    function openNumModal(isSingle) { clearInputs(); const modal = document.getElementById('modal-num'); const row2 = document.getElementById('row-num-2'); const row3 = document.getElementById('row-num-3'); const title = document.getElementById('num-title'); document.getElementById('num-1').value = ''; document.getElementById('num-2').value = ''; document.getElementById('num-3').value = ''; const p1 = document.getElementById('num-1'); if(isSingle) { title.innerText = "时间+报数"; p1.placeholder = "请输入数字 (0-100)"; row2.style.display = 'none'; row3.style.display = 'none'; } else { title.innerText = "报数起卦"; p1.placeholder = "数字一 (0-100)"; row2.style.display = 'flex'; row3.style.display = 'flex'; } modal.style.display = 'flex'; }
+    function closeNumModal() { document.getElementById('modal-num').style.display = 'none'; }
+    let yaoStates = [null, 0, 0, 0, 0, 0, 0]; 
+    function openManualModal() { isFromHistory = false; editingIndex = -1; clearInputs(); yaoStates = [null, 0, 0, 0, 0, 0, 0]; renderManualYao(); document.getElementById('modal-manual').style.display = 'flex'; }
+    function closeManualModal() { document.getElementById('modal-manual').style.display = 'none'; }
+    function toggleYao(index) { const current = yaoStates[index]; let next; if (current === 0) next = 2; else if (current === 2) next = 1; else if (current === 1) next = 3; else if (current === 3) next = 0; if (next === 2 || next === 3) { for (let i = 1; i <= 6; i++) { if (i !== index) { if (yaoStates[i] === 2) yaoStates[i] = 0; if (yaoStates[i] === 3) yaoStates[i] = 1; } } } yaoStates[index] = next; renderManualYao(); }
+    function renderManualYao() { for(let i=1; i<=6; i++) { const el = document.getElementById(`my-${i}`); const s = yaoStates[i]; el.className = 'm-yao'; if(s === 1) el.classList.add('yin'); if(s === 2) el.classList.add('moving'); if(s === 3) { el.classList.add('yin'); el.classList.add('moving'); } } }
+    function confirmManual() { const downLines = [(yaoStates[1]===0||yaoStates[1]===2)?1:0, (yaoStates[2]===0||yaoStates[2]===2)?1:0, (yaoStates[3]===0||yaoStates[3]===2)?1:0]; const upLines = [(yaoStates[4]===0||yaoStates[4]===2)?1:0, (yaoStates[5]===0||yaoStates[5]===2)?1:0, (yaoStates[6]===0||yaoStates[6]===2)?1:0]; const down = findGuaNum(downLines); const up = findGuaNum(upLines); let move = 0; for(let i=1; i<=6; i++) { if(yaoStates[i] === 2 || yaoStates[i] === 3) { move = i; } } closeManualModal(); showGuaPanel(up, down, move); }
+
+    let historyRecords = JSON.parse(localStorage.getItem('meiHuaHistory') || '[]');
+    let isSelectMode = false;
+    let selectedIndices = new Set();
+
+    function saveCurrentRecord() {
+        const now = new Date();
+        const YY = now.getFullYear();
+        const M = now.getMonth()+1;
+        const D = now.getDate();
+        const dateStr = `${YY}/${M}/${D}`; 
+
+        const matter = document.getElementById('input-matter').value.trim();
+        const tag = document.getElementById('input-tag').value.trim();
+        const note = document.getElementById('input-note').value.trim();
+
+        let title = dateStr;
+        if (tag) title += ` #${tag}`;
+        if (matter) title += ` ${matter}`;
+        else title += ' (无事项)';
+
+        const record = {
+            title: title,
+            note: note,
+            matter: matter,
+            tag: tag,
+            up: curUp,
+            down: curDown,
+            move: curMove,
+            fullDate: document.getElementById('res-date-txt').innerText,
+            year: document.getElementById('res-year').innerText,
+            month: document.getElementById('res-month').innerText,
+            day: document.getElementById('res-day').innerText,
+            hour: document.getElementById('res-hour').innerText,
+            xunkong: document.getElementById('res-xunkong').innerText,
+            shensha: document.getElementById('res-shensha').innerHTML,
+            timestamp: now.getTime()
+        };
+
+        if (editingIndex !== -1) {
+            historyRecords[editingIndex] = record;
+            showToast('已更新');
+        } else {
+            historyRecords.unshift(record);
+            showToast('已保存');
+        }
+
+        localStorage.setItem('meiHuaHistory', JSON.stringify(historyRecords));
+    }
+
+    function loadHistoryItem(index) {
+        isFromHistory = true; 
+        editingIndex = index;
+        const rec = historyRecords[index];
+        
+        showGuaPanel(rec.up, rec.down, rec.move);
+        
+        document.getElementById('res-date-txt').innerText = rec.fullDate;
+        document.getElementById('res-year').innerText = rec.year;
+        document.getElementById('res-month').innerText = rec.month;
+        document.getElementById('res-day').innerText = rec.day;
+        document.getElementById('res-hour').innerText = rec.hour;
+        document.getElementById('res-xunkong').innerText = rec.xunkong;
+        document.getElementById('res-shensha').innerHTML = rec.shensha;
+
+        document.getElementById('input-matter').value = rec.matter || '';
+        document.getElementById('input-note').value = rec.note || '';
+        document.getElementById('input-tag').value = rec.tag || '';
+
+        // 【修复】点击条目时，只关闭历史页，不操作主界面（因为showGuaPanel已经处理了）
+        closeHistoryPage();
+    }
+
+    function openHistoryPage() {
+        document.getElementById('history-page').style.display = 'flex';
+        isSelectMode = false;
+        renderHistoryList();
+        updateHistoryUI();
+    }
+
+    function toggleSelectMode() {
+        isSelectMode = !isSelectMode;
+        selectedIndices.clear();
+        renderHistoryList();
+        updateHistoryUI();
+    }
+
+    function updateHistoryUI() {
+        const btnSelect = document.getElementById('btn-select-mode');
+        const backupArea = document.getElementById('backup-area');
+        const deleteBar = document.getElementById('delete-bar');
+
+        if (isSelectMode) {
+            btnSelect.innerText = '全选'; 
+            btnSelect.onclick = toggleSelectAll; 
+            backupArea.style.display = 'none';
+            deleteBar.style.display = 'flex';
+        } else {
+            btnSelect.innerText = '选择';
+            btnSelect.onclick = toggleSelectMode; 
+            backupArea.style.display = 'flex';
+            deleteBar.style.display = 'none';
+        }
+    }
+
+    function toggleSelectAll() {
+        if (selectedIndices.size < historyRecords.length) {
+            historyRecords.forEach((_, i) => selectedIndices.add(i));
+        } else {
+            selectedIndices.clear();
+        }
+        renderHistoryList();
+    }
+
+    function renderHistoryList() {
+        const container = document.getElementById('history-list');
+        container.innerHTML = '';
+
+        if (historyRecords.length === 0) {
+            container.innerHTML = '<div style="text-align:center; padding:40px; color:#888;">暂无历史记录</div>';
+            return;
+        }
+
+        historyRecords.forEach((rec, index) => {
+            const item = document.createElement('div');
+            item.className = 'history-item';
+            
+            item.onclick = () => {
+                if (isSelectMode) {
+                    if (selectedIndices.has(index)) selectedIndices.delete(index);
+                    else selectedIndices.add(index);
+                    renderHistoryList(); 
+                } else {
+                    loadHistoryItem(index);
+                }
+            };
+
+            const isChecked = selectedIndices.has(index);
+            const checkClass = isChecked ? 'check-box checked' : 'check-box';
+            const checkStyle = isSelectMode ? 'display:flex' : 'display:none';
+
+            item.innerHTML = `
+                <div class="${checkClass}" style="${checkStyle}"></div>
+                <div class="item-content">
+                    <div class="item-title">${rec.title}</div>
+                    <div class="item-desc">${rec.note || '无断语'}</div>
+                </div>
+            `;
+            container.appendChild(item);
+        });
+    }
+
+    function deleteSelected() {
+        if (selectedIndices.size === 0) return;
+        const sortedIndices = Array.from(selectedIndices).sort((a, b) => b - a);
+        sortedIndices.forEach(idx => historyRecords.splice(idx, 1));
+        localStorage.setItem('meiHuaHistory', JSON.stringify(historyRecords));
+        toggleSelectMode();
+    }
+
+    function showToast(msg) {
+        const toast = document.getElementById('toast-msg');
+        toast.innerText = msg;
+        toast.style.display = 'block';
+        setTimeout(() => { toast.style.display = 'none'; }, 2000);
+    }
+
+    function exportData() {
+        const dataStr = JSON.stringify(historyRecords, null, 2);
+        const blob = new Blob([dataStr], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `梅花易数备份_${new Date().toISOString().slice(0,10)}.json`;
+        a.click();
+    }
+
+    function importData(input) {
+        const file = input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const imported = JSON.parse(e.target.result);
+                if (Array.isArray(imported)) {
+                    if(confirm(`发现 ${imported.length} 条记录，确定覆盖当前记录吗？`)) {
+                        historyRecords = imported;
+                        localStorage.setItem('meiHuaHistory', JSON.stringify(historyRecords));
+                        renderHistoryList();
+                        showToast('导入成功');
+                    }
+                } else { showToast('文件格式错误'); }
+            } catch (err) { showToast('文件解析失败'); }
+        };
+        reader.readAsText(file);
+    }
+
+    function clearInputs() {
+        document.getElementById('input-matter').value = '';
+        document.getElementById('input-note').value = '';
+        document.getElementById('input-tag').value = '';
+    }
+
+</script>
+</body>
+
+</html>
